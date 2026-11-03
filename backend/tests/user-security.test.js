@@ -10,6 +10,7 @@ const { updateUser } = require('../controllers/user');
 
 function fakeUser() {
   return {
+    username: 'securitytester',
     email: 'old@example.com',
     password: 'original-hash',
     dataValues: {},
