@@ -4,8 +4,8 @@ const verifyToken = require("../../middleware/authentication");
 const { favoriteToggler } = require("../../controllers/favorites");
 
 //* Favorite Article
-router.post("/:slug/favorite", verifyToken, favoriteToggler);
+router.post("/:slug/favorite", verifyToken.required, favoriteToggler);
 //* Unfavorite Article
-router.delete("/:slug/favorite", verifyToken, favoriteToggler);
+router.delete("/:slug/favorite", verifyToken.required, favoriteToggler);
 
 module.exports = router;

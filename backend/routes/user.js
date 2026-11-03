@@ -4,8 +4,8 @@ const verifyToken = require("../middleware/authentication");
 const { currentUser, updateUser } = require("../controllers/user");
 
 //* Current User
-router.get("/", verifyToken, currentUser);
+router.get("/", verifyToken.required, currentUser);
 //* Update User
-router.put("/", verifyToken, updateUser);
+router.put("/", verifyToken.required, updateUser);
 
 module.exports = router;

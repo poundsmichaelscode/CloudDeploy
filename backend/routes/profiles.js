@@ -7,9 +7,9 @@ const { getProfile, followToggler } = require("../controllers/profiles");
 router.get("/:username", verifyToken, getProfile);
 
 //* Follow Profile
-router.post("/:username/follow", verifyToken, followToggler);
+router.post("/:username/follow", verifyToken.required, followToggler);
 
 //* Unfollow Profile
-router.delete("/:username/follow", verifyToken, followToggler);
+router.delete("/:username/follow", verifyToken.required, followToggler);
 
 module.exports = router;

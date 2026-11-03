@@ -13,15 +13,15 @@ const {
 //? All Articles - by Author/by Tag/Favorited by user
 router.get("/", verifyToken, allArticles);
 //* Create Article
-router.post("/", verifyToken, createArticle);
+router.post("/", verifyToken.required, createArticle);
 //* Feed
-router.get("/feed", verifyToken, articlesFeed);
+router.get("/feed", verifyToken.required, articlesFeed);
 // Single Article by slug
 router.get("/:slug", verifyToken, singleArticle);
 //* Update Article
-router.put("/:slug", verifyToken, updateArticle);
+router.put("/:slug", verifyToken.required, updateArticle);
 //* Delete Article
-router.delete("/:slug", verifyToken, deleteArticle);
+router.delete("/:slug", verifyToken.required, deleteArticle);
 
 const favoritesRoutes = require("./articles/favorites");
 const commentsRoutes = require("./articles/comments");
