@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         through: "TagList",
         as: "tagList",
         foreignKey: "articleId",
+        otherKey: "tagName",
         timestamps: false,
         onDelete: "cascade", // FIXME: delete tags
       });

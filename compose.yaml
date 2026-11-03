@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${DEV_DB_USERNAME:?Database username required}
+      POSTGRES_PASSWORD: ${DEV_DB_PASSWORD:?Database password required}
+      POSTGRES_DB: ${DEV_DB_NAME:?Database name required}
+
+    ports:
+      - "127.0.0.1:5435:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:
