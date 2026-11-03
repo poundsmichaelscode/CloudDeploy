@@ -1,58 +1,131 @@
+"use strict";
+
 const { User } = require("../models");
 const { jwtSign } = require("../helper/jwt");
 const { bcryptHash, bcryptCompare } = require("../helper/bcrypt");
 const {
   ValidationError,
-  FieldRequiredError,
   AlreadyTakenError,
-  NotFoundError,
 } = require("../helper/customErrors");
 
-// Register
+const INVALID_CREDENTIALS = "Invalid email or password";
+
+function requireUserPayload(body) {
+  const user = body?.user;
+
+  if (!user || typeof user !== "object" || Array.isArray(user)) {
+    throw new ValidationError("A user object is required");
+  }
+
+  return user;
+}
+
+function requireText(value, field) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new ValidationError(`${field} must be a non-empty string`);
+  }
+
+  return value.trim();
+}
+
+function validateEmail(value) {
+  const email = requireText(value, "Email").toLowerCase();
+
+  if (
+    email.length > 254 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  ) {
+    throw new ValidationError("A valid email address is required");
+  }
+
+  return email;
+}
+
+function validatePassword(value) {
+  if (typeof value !== "string" || value.length < 12) {
+    throw new ValidationError(
+      "Password must contain at least 12 characters"
+    );
+  }
+
+  return value;
+}
+
+// POST /api/users
 const signUp = async (req, res, next) => {
   try {
-    const { username, email, bio, image, password } = req.body.user;
-    if (!username) throw new FieldRequiredError(`A username`);
-    if (!email) throw new FieldRequiredError(`An email`);
-    if (!password) throw new FieldRequiredError(`A password`);
+    const input = requireUserPayload(req.body);
 
-    const userExists = await User.findOne({
-      where: { email: req.body.user.email },
+    const username = requireText(input.username, "Username");
+    const email = validateEmail(input.email);
+    const password = validatePassword(input.password);
+
+    for (const field of ["bio", "image"]) {
+      if (
+        input[field] !== undefined &&
+        input[field] !== null &&
+        typeof input[field] !== "string"
+      ) {
+        throw new ValidationError(
+          `${field} must be a string or null`
+        );
+      }
+    }
+
+    const existing = await User.findOne({
+      where: { email },
     });
-    if (userExists) throw new AlreadyTakenError("Email", "try logging in");
 
-    const newUser = await User.create({
-      email: email,
-      username: username,
-      bio: bio,
-      image: image,
+    if (existing) {
+      throw new AlreadyTakenError("Email", "try logging in");
+    }
+
+    const user = await User.create({
+      username,
+      email,
+      bio: input.bio,
+      image: input.image,
       password: await bcryptHash(password),
     });
 
-    newUser.dataValues.token = await jwtSign(newUser);
+    user.dataValues.token = await jwtSign(user);
 
-    res.status(201).json({ user: newUser });
+    return res.status(201).json({ user });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Login
+// POST /api/users/login
 const signIn = async (req, res, next) => {
   try {
-    const { user } = req.body;
+    const input = requireUserPayload(req.body);
 
-    const existentUser = await User.findOne({ where: { email: user.email } });
-    if (!existentUser) throw new NotFoundError("Email", "sign in first");
+    const email = validateEmail(input.email);
+    const password = requireText(input.password, "Password");
 
-    const pwd = await bcryptCompare(user.password, existentUser.password);
-    if (!pwd) throw new ValidationError("Wrong email/password combination");
+    const user = await User.findOne({
+      where: { email },
+    });
 
-    existentUser.dataValues.token = await jwtSign(existentUser);
+    if (!user) {
+      throw new ValidationError(INVALID_CREDENTIALS);
+    }
 
-    res.json({ user: existentUser });
+    const validPassword = await bcryptCompare(
+      password,
+      user.password
+    );
+
+    if (!validPassword) {
+      throw new ValidationError(INVALID_CREDENTIALS);
+    }
+
+    user.dataValues.token = await jwtSign(user);
+
+    return res.json({ user });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 

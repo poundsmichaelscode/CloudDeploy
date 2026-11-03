@@ -84,6 +84,66 @@ describe.skipIf(!runIntegration)(
       }
     });
 
+
+    it("rejects registration without a user object", async () => {
+      const response = await request(app)
+        .post("/api/users")
+        .send({});
+
+      expect(response.status).toBe(422);
+      expect(response.body.user).toBeUndefined();
+    });
+
+    it("rejects invalid registration data", async () => {
+      const cases = [
+        { username, email, password: "short" },
+        { username, email: "not-an-email", password },
+        { username: "", email, password },
+        { username: 123, email, password },
+      ];
+
+      for (const user of cases) {
+        const response = await request(app)
+          .post("/api/users")
+          .send({ user });
+
+        expect(response.status).toBe(422);
+      }
+    });
+
+    it("rejects malformed login requests", async () => {
+      const cases = [
+        {},
+        { user: null },
+        { user: { email } },
+        { user: { email, password: 123 } },
+      ];
+
+      for (const payload of cases) {
+        const response = await request(app)
+          .post("/api/users/login")
+          .send(payload);
+
+        expect(response.status).toBe(422);
+      }
+    });
+
+    it("does not reveal whether a login email exists", async () => {
+      const response = await request(app)
+        .post("/api/users/login")
+        .send({
+          user: {
+            email: `missing-${suffix}@example.test`,
+            password,
+          },
+        });
+
+      expect(response.status).toBe(422);
+      expect(response.body.errors.body).toEqual([
+        "Invalid email or password",
+      ]);
+    });
+
     it("registers a user and securely persists the password", async () => {
       const response = await request(app)
         .post("/api/users")
@@ -152,6 +212,9 @@ describe.skipIf(!runIntegration)(
       // response normalization comes later.
       expect(response.status).toBe(422);
       expect(response.body.user).toBeUndefined();
+      expect(response.body.errors.body).toEqual([
+        "Invalid email or password",
+      ]);
     });
 
     it("rejects anonymous and invalid-token access", async () => {
