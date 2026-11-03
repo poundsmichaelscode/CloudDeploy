@@ -1,32 +1,24 @@
-const { NotFoundError } = require("../helper/customErrors");
-const { jwtVerify } = require("../helper/jwt");
-const { User } = require("../models");
+'use strict';
+const { UnauthorizedError } = require('../helper/customErrors');
+const { jwtVerify } = require('../helper/jwt');
+const { User } = require('../models');
 
-const verifyToken = async (req, res, next) => {
+const verifyToken = async (req, _res, next) => {
   try {
-    const { headers } = req;
-    if (!headers.authorization) return next();
-
-    const token = headers.authorization.split(" ")[1];
-    if (!token) throw new SyntaxError("Token missing or malformed");
-
-    const userVerified = await jwtVerify(token);
-    if (!userVerified) throw new Error("Invalid Token");
-
-    req.loggedUser = await User.findOne({
-      attributes: { exclude: ["email"] },
-      where: { email: userVerified.email },
-    });
-
-    if (!req.loggedUser) next(new NotFoundError("User"));
-
-    headers.email = userVerified.email;
-    req.loggedUser.dataValues.token = token;
-
-    next();
-  } catch (error) {
-    next(error);
-  }
+    const authorization = req.get('authorization');
+    // Preserve anonymous access on upstream optional-authentication routes.
+    if (!authorization) return next();
+    const match = /^Token\s+(\S+)$/i.exec(authorization) || /^Bearer\s+(\S+)$/i.exec(authorization);
+    if (!match) throw new UnauthorizedError();
+    let claims;
+    try { claims = await jwtVerify(match[1]); }
+    catch (_error) { throw new UnauthorizedError(); }
+    if (!claims || typeof claims.email !== 'string') throw new UnauthorizedError();
+    const loggedUser = await User.findOne({ where: { email: claims.email } });
+    if (!loggedUser) throw new UnauthorizedError();
+    req.loggedUser = loggedUser;
+    req.loggedUser.dataValues.token = match[1];
+    return next();
+  } catch (error) { return next(error); }
 };
-
 module.exports = verifyToken;
