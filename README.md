@@ -1,134 +1,175 @@
-# ![RealWorld Example App](logo.png)
+# CloudDeploy
 
-> **React / Vite + SWC / Express.js / Sequelize / PostgreSQL codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://realworld.io/) spec and API.**
+**Secure Full-Stack Application | Backend Engineering | DevOps**
 
-This codebase was created to demonstrate a fully fledged fullstack application built with **React / Vite + SWC / Express.js / Sequelize / PostgreSQL** including CRUD operations, authentication, routing, pagination, and more.
+CloudDeploy is a full-stack engineering project focused on secure REST API development, PostgreSQL database management, automated testing, containerization, and cloud-ready engineering practices.
 
-**[Demo app](https://conduit-realworld-example-app.fly.dev/)&nbsp;&nbsp;|&nbsp;&nbsp;[With Create React App](https://github.com/TonyMckes/conduit-realworld-example-app/tree/create-react-app)&nbsp;&nbsp;|&nbsp;&nbsp;[Other RealWorld Example Apps](https://codebase.show/projects/realworld?category=fullstack)**
+The project extends the open-source [Conduit RealWorld Example App](https://github.com/TonyMckes/conduit-realworld-example-app) with backend security hardening, database migrations, operational health checks, and integration testing.
 
-> For more information on how to this works with other frontends/backends, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
+**Status:** Active development. Local application security and PostgreSQL integration testing are implemented. Production cloud deployment is planned.
 
----
+## Technology Stack
+
+| Component | Technology |
+|---|---|
+| Backend | Node.js 26, Express 5 |
+| Frontend | React 19, Vite |
+| Database | PostgreSQL 17 |
+| ORM | Sequelize 6 |
+| Authentication | JWT, bcrypt |
+| Infrastructure | Docker, Docker Compose |
+| Testing | Vitest, Supertest |
+| Version control | Git, GitHub |
+
+## Architecture
+
+Browser / React Frontend → Express REST API → Sequelize ORM → PostgreSQL 17
+
+The development PostgreSQL service runs in Docker Compose with persistent storage. The frontend and backend run locally during development.
+
+## Implemented Features
+
+- REST endpoints for users, articles, profiles, comments, and favorites
+- JWT authentication with 15-minute expiration
+- Required and optional authentication middleware
+- Registration and login input validation
+- Generic invalid-credential responses
+- bcrypt password hashing
+- Version-controlled database migrations
+- PostgreSQL database associations
+- Liveness and readiness endpoints
+- Structured HTTP logging and request IDs
+- Restricted CORS and request body size limits
+- Sanitized server error responses
+- Unit, HTTP middleware, and PostgreSQL integration tests
 
 ## Getting Started
 
-These instructions will help you install and run the project on your local machine for development and testing.
-
 ### Prerequisites
 
-Before you run the project, make sure that you have the following tools and software installed on your computer:
-
-- Text editor/IDE (e.g., VS Code, Sublime Text, Atom)
-- [Git](https://git-scm.com/downloads)
-- [Node.js](https://nodejs.org/en/download/) `v18.11.0+`
-- [NPM](https://www.npmjs.com/) (usually included with Node.js)
-- SQL database
+Git, Node.js 26, npm, Docker, and Docker Compose.
 
 ### Installation
 
-To install the project on your computer, follow these steps:
+Clone the repository:
 
-1. Clone the repository to your local machine.
+    git clone https://github.com/poundsmichaelscode/CloudDeploy.git
+    cd CloudDeploy
 
-   ```bash
-   git clone https://github.com/TonyMckes/conduit-realworld-example-app.git
-   ```
+Install dependencies:
 
-2. Navigate to the project directory.
+    npm install
 
-   ```bash
-   cd conduit-realworld-example-app
-   ```
+Copy the example environment file:
 
-3. Install project dependencies by running the command:
+    cp backend/.env.example .env
 
-   ```bash
-   npm install
-   ```
+Set secure local database credentials and replace JWT_KEY with a randomly generated secret of at least 32 characters.
 
-### Configuration
+Do not commit .env.
 
-1. Create a `.env` file in the root directory of the project
-2. Add the required environment variables as specified in the [`.env.example`](backend/.env.example) file
-3. (Optional) update the Sequelize configuration parameters in the [`config.js`](backend/config/config.js) file
-4. If you are **not** using PostgreSQL, you may also have to install the driver for your database:
+Start PostgreSQL:
 
-   <details>
-   <summary>Use one of the following commands to install:</summary><br/>
+    docker compose up -d postgres
+    docker compose ps
 
-   > Note: `-w backend` option is used to install it in the backend [`package.json`](backend/package.json).
+Apply migrations:
 
-   ```bash
-   npm install -w backend pg pg-hstore  # Postgres (already installed)
-   npm install -w backend mysql2
-   npm install -w backend mariadb
-   npm install -w backend sqlite3
-   npm install -w backend tedious       # Microsoft SQL Server
-   npm install -w backend oracledb      # Oracle Database
-   ```
+    npm run sqlz -- db:migrate
+    npm run sqlz -- db:migrate:status
 
-   > :information_source: Visit [Sequelize - Installing](https://sequelize.org/docs/v6/getting-started/#installing) for more infomation.
+Start the frontend and backend:
 
-   ***
+    npm run dev
 
-   </details>
+The backend API defaults to http://localhost:3001. Vite prints the frontend development URL.
 
-5. Create database specified by configuration by executing
+## Health Endpoints
 
-   > :warning: Please, make sure you have already created a superuser for your database.
+| Endpoint | Purpose |
+|---|---|
+| GET /health/live | Application liveness |
+| GET /health/ready | Database readiness |
 
-   ```bash
-   npm run sqlz -- db:create
-   ```
+## API Endpoints
 
-   > :information_source: The command `npm run sqlz` is an alias for `npx -w backend sequelize-cli`.  
-   > Execute `npm run sqlz -- --help` to see more of `sequelize-cli` commands availables.
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | /api/users | Registration |
+| POST | /api/users/login | Login |
+| GET | /api/user | Current account |
+| PUT | /api/user | Update account |
+| GET | /api/articles | Article listing |
+| POST | /api/articles | Create article |
+| GET | /api/articles/feed | Personalized feed |
+| GET | /api/profiles/:username | Profile |
+| GET | /api/tags | Tags |
 
-6. Optionally you can run the following command to populate your database with some dummy data:
+Protected routes accept a valid JWT using the Token or Bearer authorization scheme.
 
-   ```bash
-   npm run sqlz -- db:seed:all
-   ```
+## Testing
 
-### Usage
+Run regular automated tests:
 
-#### Development Server
+    CI=true npm test -- --run
 
-To run the project, follow these steps:
+Latest verified regular-test baseline: 39 passing tests.
 
-1. Start the development server by executing the command:
+### PostgreSQL Integration Tests
 
-   ```bash
-   npm run dev
-   ```
+Create a separate clouddeploy_test database in the running PostgreSQL container if it does not already exist.
 
-2. Open a web browser and navigate to:
-   - Home page should be available at [`http://localhost:3000/`](http://localhost:3000).
-   - API endpoints should be available at [`http://localhost:3001/api`](http://localhost:3001/api).
+Configure TEST_DB_* variables to point to that database.
 
-#### Running Tests
+Apply the test migrations:
 
-To run tests, simply run the following command:
+    NODE_ENV=test npm run sqlz -- db:migrate
 
-```bash
-npm run test
-```
+Run real HTTP and PostgreSQL authentication tests:
 
-#### Production
+    NODE_ENV=test RUN_DB_INTEGRATION=1 CI=true npx vitest run backend/tests/auth-postgres.integration.test.js
 
-The following command will build the production version of the app:
+Latest verified integration-test baseline: nine passing tests.
 
-```bash
-npm run start
-```
+The integration suite verifies database isolation and cleans up temporary test users.
 
-## License
+### Frontend Build
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+    npm run build -w frontend
 
-## Acknowledgments
+## Security
 
-- [RealWorld](https://realworld.io/)
-- [RealWorld (GitHub)](https://github.com/gothinkster/realworld)
-- [CodebaseShow](https://codebase.show/)
-- [How to write a Good readme](https://bulldogjob.com/news/449-how-to-write-a-good-readme-for-your-github-project)
+The application implements JWT verification, password hashing, required authentication for protected routes, request validation, and sanitized error responses.
+
+Rate limiting, security headers, uniqueness constraints, and token lifecycle improvements remain planned.
+
+CloudDeploy is not yet considered production-ready.
+
+## Roadmap
+
+- [x] PostgreSQL Docker Compose environment
+- [x] Sequelize migrations
+- [x] Health and readiness endpoints
+- [x] Structured request logging
+- [x] Authentication hardening
+- [x] Protected API routes
+- [x] Input validation
+- [x] PostgreSQL integration tests
+- [ ] Rate limiting and security headers
+- [ ] Database uniqueness constraints
+- [ ] Token revocation improvements
+- [ ] GitHub Actions CI/CD
+- [ ] Production application containers
+- [ ] AWS deployment
+- [ ] Monitoring and alerting
+- [ ] Operational runbooks
+
+## Original Project and License
+
+CloudDeploy builds upon [TonyMckes/conduit-realworld-example-app](https://github.com/TonyMckes/conduit-realworld-example-app), based on the RealWorld specification.
+
+The original project is licensed under MIT. See [LICENSE](LICENSE).
+
+## Repository
+
+https://github.com/poundsmichaelscode/CloudDeploy
