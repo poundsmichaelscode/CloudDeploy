@@ -48,7 +48,7 @@ const signIn = async (req, res, next) => {
     const pwd = await bcryptCompare(user.password, existentUser.password);
     if (!pwd) throw new ValidationError("Wrong email/password combination");
 
-    existentUser.dataValues.token = await jwtSign(user);
+    existentUser.dataValues.token = await jwtSign(existentUser);
 
     res.json({ user: existentUser });
   } catch (error) {
